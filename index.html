@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Stacc Background Generator</title>
+<style>
+  :root {
+    --bg: #0e0f12;
+    --panel: #16181d;
+    --panel-2: #1d2027;
+    --line: #262a33;
+    --text: #e8eaee;
+    --muted: #8b919d;
+    --accent: #d2ff3a;
+    --accent-2: #ff5b2e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif; }
+  .app { display: grid; grid-template-columns: 320px 1fr; height: 100vh; min-height: 0; }
+  .sidebar { background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; padding: 18px 16px 28px; }
+  .stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .toolbar { display: flex; gap: 8px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .toolbar .spacer { flex: 1; }
+  .preview-wrap { flex: 1; min-height: 0; padding: 18px; display: grid; place-items: center; overflow: auto; background:
+    repeating-conic-gradient(#101115 0% 25%, #15171c 0% 50%) 50% / 24px 24px;
+  }
+  .preview-frame { background: #000; box-shadow: 0 14px 40px rgba(0,0,0,.5), 0 0 0 1px var(--line); }
+  .preview-frame svg { display: block; max-width: min(82vw, 1400px); max-height: 78vh; height: auto; width: auto; }
+  h1 { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; font-weight: 600; }
+  h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 18px 0 8px; font-weight: 600; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 8px 0 4px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%; padding: 7px 9px; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--line); border-radius: 6px; font: inherit;
+  }
+  textarea { resize: vertical; min-height: 56px; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .num-with-unit { display: flex; align-items: center; gap: 6px; }
+  .num-with-unit span { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; }
+  .swatch { display: flex; align-items: center; gap: 8px; }
+  .swatch input[type="color"] { width: 36px; height: 28px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: transparent; }
+  .swatch input[type="text"] { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  button {
+    appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    padding: 7px 12px; border-radius: 6px; cursor: pointer; font: inherit;
+  }
+  button:hover { border-color: #3a4150; }
+  button.primary { background: var(--accent); color: #0a0a0a; border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { filter: brightness(1.05); }
+  .checkbox { display: flex; align-items: center; gap: 8px; margin: 8px 0; color: var(--text); }
+  .checkbox input { accent-color: var(--accent); }
+  .palette { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .palette button {
+    padding: 0; width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--line);
+    overflow: hidden; position: relative;
+  }
+  .palette button .a { position: absolute; inset: 0; }
+  .palette button .b { position: absolute; right: 0; top: 0; width: 50%; height: 100%; }
+  .hint { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+  .grow { flex: 1; }
+  .seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: var(--panel-2); padding: 6px 10px; }
+  .seg button.on { background: var(--accent); color: #0a0a0a; font-weight: 600; }
+  .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <h1>Stacc Background Generator</h1>
+
+    <h2>Canvas</h2>
+    <label>Preset</label>
+    <select id="preset">
+      <option value="1920x1080">Desktop · 1920 × 1080</option>
+      <option value="3840x2160">Desktop 4K · 3840 × 2160</option>
+      <option value="2560x1440">Desktop QHD · 2560 × 1440</option>
+      <option value="1080x1080">Square · 1080 × 1080</option>
+      <option value="1080x1920">Story · 1080 × 1920</option>
+      <option value="1200x630">Open Graph · 1200 × 630</option>
+      <option value="1500x500">Twitter header · 1500 × 500</option>
+      <option value="1584x396">LinkedIn banner · 1584 × 396</option>
+      <option value="1280x720">Slack/Zoom · 1280 × 720</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <div class="row" style="margin-top:8px">
+      <div>
+        <label>Width (px)</label>
+        <input id="width" type="number" min="64" max="8192" value="1920" />
+      </div>
+      <div>
+        <label>Height (px)</label>
+        <input id="height" type="number" min="64" max="8192" value="1080" />
+      </div>
+    </div>
+
+    <h2>Palette</h2>
+    <label>Background</label>
+    <div class="swatch">
+      <input id="bgColor" type="color" value="#0e0f12" />
+      <input id="bgHex" type="text" value="#0e0f12" />
+    </div>
+    <label>Primary accent</label>
+    <div class="swatch">
+      <input id="accentColor" type="color" value="#3ddc97" />
+      <input id="accentHex" type="text" value="#3ddc97" />
+    </div>
+    <label>Secondary accent (text / rare bars)</label>
+    <div class="swatch">
+      <input id="accent2Color" type="color" value="#ff5b2e" />
+      <input id="accent2Hex" type="text" value="#ff5b2e" />
+    </div>
+    <label>Quick palettes</label>
+    <div class="palette" id="palettes"></div>
+    <div class="hint">Set your exact Stacc brand hex codes here — these are starting points.</div>
+
+    <h2>Bars</h2>
+    <label>Bar height <span class="kbd" id="barHeightOut"></span></label>
+    <input id="barHeight" type="range" min="2" max="80" value="22" />
+    <label>Row gap <span class="kbd" id="rowGapOut"></span></label>
+    <input id="rowGap" type="range" min="0" max="120" value="22" />
+    <label>Density <span class="kbd" id="densityOut"></span></label>
+    <input id="density" type="range" min="10" max="100" value="42" />
+    <label>Empty rows <span class="kbd" id="skipOut"></span></label>
+    <input id="skip" type="range" min="0" max="80" value="20" />
+    <div class="row">
+      <div>
+        <label>Min bar % <span class="kbd" id="minBarOut"></span></label>
+        <input id="minBar" type="range" min="1" max="40" value="3" />
+      </div>
+      <div>
+        <label>Max bar % <span class="kbd" id="maxBarOut"></span></label>
+        <input id="maxBar" type="range" min="3" max="80" value="22" />
+      </div>
+    </div>
+    <label class="checkbox"><input id="rounded" type="checkbox" /> Rounded ends</label>
+    <label class="checkbox"><input id="useSecondary" type="checkbox" /> Sprinkle secondary-color bars</label>
+
+    <h2>Text overlay</h2>
+    <textarea id="overlayText" placeholder="Optional headline (leave blank for none)"></textarea>
+    <div class="row">
+      <div>
+        <label>Color</label>
+        <select id="textColor">
+          <option value="accent">Primary accent</option>
+          <option value="accent2" selected>Secondary accent</option>
+          <option value="fg">Foreground</option>
+        </select>
+      </div>
+      <div>
+        <label>Position</label>
+        <select id="textPos">
+          <option value="bl" selected>Bottom-left</option>
+          <option value="tl">Top-left</option>
+          <option value="tr">Top-right</option>
+          <option value="br">Bottom-right</option>
+          <option value="c">Center</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>Size <span class="kbd" id="textSizeOut"></span></label>
+        <input id="textSize" type="range" min="2" max="14" value="5" />
+      </div>
+      <div>
+        <label>Weight</label>
+        <select id="textWeight">
+          <option value="400">Regular</option>
+          <option value="600" selected>Semibold</option>
+          <option value="700">Bold</option>
+          <option value="800">Extra bold</option>
+        </select>
+      </div>
+    </div>
+
+    <h2>Seed</h2>
+    <div class="row">
+      <input id="seed" type="number" value="1" />
+      <button id="reroll">🎲 Reroll</button>
+    </div>
+    <div class="hint">Same seed + same settings → same output.</div>
+  </aside>
+
+  <section class="stage">
+    <div class="toolbar">
+      <span class="pill" id="dimsPill">— × —</span>
+      <span class="pill" id="seedPill">seed —</span>
+      <div class="spacer"></div>
+      <button id="copySvg">Copy SVG</button>
+      <button id="dlSvg">Download SVG</button>
+      <button id="dlPng" class="primary">Download PNG</button>
+    </div>
+    <div class="preview-wrap">
+      <div class="preview-frame" id="frame"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+const PALETTES = [
+  { name: "Mono dark", bg: "#0e0f12", a: "#e8eaee", b: "#8b919d" },
+  { name: "Mono light", bg: "#f4f3ee", a: "#0e0f12", b: "#6b7280" },
+  { name: "Lime dark", bg: "#0e0f12", a: "#3ddc97", b: "#ff5b2e" },
+  { name: "Lime light", bg: "#f4f3ee", a: "#10b981", b: "#ef4444" },
+  { name: "Magenta dark", bg: "#101015", a: "#ff3d8a", b: "#9bf0ff" },
+  { name: "Cobalt", bg: "#0a1430", a: "#5b8def", b: "#fbbf24" },
+  { name: "Forest", bg: "#0c1f17", a: "#7cf0a0", b: "#f0c674" },
+  { name: "Plum", bg: "#1a0a23", a: "#c89dff", b: "#ffd166" },
+];
+
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const $ = (id) => document.getElementById(id);
+
+function readOpts() {
+  return {
+    w: clamp(int($("width").value), 64, 8192),
+    h: clamp(int($("height").value), 64, 8192),
+    bg: $("bgColor").value,
+    accent: $("accentColor").value,
+    accent2: $("accent2Color").value,
+    barH: int($("barHeight").value),
+    gap: int($("rowGap").value),
+    density: int($("density").value) / 100,
+    skip: int($("skip").value) / 100,
+    minBar: int($("minBar").value) / 100,
+    maxBar: int($("maxBar").value) / 100,
+    rounded: $("rounded").checked,
+    useSecondary: $("useSecondary").checked,
+    text: $("overlayText").value,
+    textColor: $("textColor").value,
+    textPos: $("textPos").value,
+    textSize: int($("textSize").value) / 100,
+    textWeight: $("textWeight").value,
+    seed: int($("seed").value) || 1,
+  };
+}
+function int(v) { return parseInt(v, 10) || 0; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function generate(opts) {
+  const rng = mulberry32(opts.seed);
+  const minBar = Math.min(opts.minBar, opts.maxBar);
+  const maxBar = Math.max(opts.minBar, opts.maxBar);
+  const stride = opts.barH + opts.gap;
+  const rows = Math.max(1, Math.floor((opts.h + opts.gap) / stride));
+  const totalH = rows * stride - opts.gap;
+  const startY = (opts.h - totalH) / 2;
+  // Density controls average gap-to-bar ratio. Higher density → smaller gaps.
+  // Average bar width (px):
+  const avgBarW = ((minBar + maxBar) / 2) * opts.w;
+  // Aim total bar width per row = density * w; gap width = (1-density)*w.
+  // Average gap multiplier so the inter-bar gap ≈ avgBarW * (1-d)/d.
+  const dens = clamp(opts.density, 0.05, 0.99);
+  const avgGapW = avgBarW * (1 - dens) / dens;
+  const minGap = Math.max(2, avgGapW * 0.3);
+  const maxGap = Math.max(minGap + 2, avgGapW * 1.7);
+
+  const bars = [];
+  for (let r = 0; r < rows; r++) {
+    const y = startY + r * stride;
+    if (rng() < opts.skip) continue;
+    // Random horizontal phase so rows don't all start at x=0.
+    let x = -rng() * (minBar + (maxBar - minBar) * rng()) * opts.w;
+    let safety = 5000;
+    while (x < opts.w && safety-- > 0) {
+      const barW = (minBar + (maxBar - minBar) * rng()) * opts.w;
+      const xStart = Math.max(0, x);
+      const xEnd = Math.min(opts.w, x + barW);
+      const drawW = xEnd - xStart;
+      if (drawW > 1) {
+        const useSecond = opts.useSecondary && rng() < 0.06;
+        bars.push({ x: xStart, y, w: drawW, h: opts.barH, c: useSecond ? "accent2" : "accent" });
+      }
+      x += barW + minGap + (maxGap - minGap) * rng();
+    }
+  }
+  return bars;
+}
+
+function escapeXml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function buildSvg(opts, bars) {
+  const rx = opts.rounded ? Math.min(opts.barH / 2, 999) : 0;
+  const parts = [];
+  parts.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${opts.w} ${opts.h}" width="${opts.w}" height="${opts.h}" preserveAspectRatio="xMidYMid slice">`);
+  parts.push(`<rect width="${opts.w}" height="${opts.h}" fill="${opts.bg}"/>`);
+  // group by color for smaller output
+  const a = bars.filter((b) => b.c === "accent");
+  const b = bars.filter((b) => b.c === "accent2");
+  if (a.length) {
+    parts.push(`<g fill="${opts.accent}">`);
+    for (const r of a) parts.push(`<rect x="${r.x.toFixed(2)}" y="${r.y.toFixed(2)}" width="${r.w.toFixed(2)}" height="${r.h.toFixed(2)}"${rx ? ` rx="${rx}" ry="${rx}"` : ""}/>`);
+    parts.push(`</g>`);
+  }
+  if (b.length) {
+    parts.push(`<g fill="${opts.accent2}">`);
+    for (const r of b) parts.push(`<rect x="${r.x.toFixed(2)}" y="${r.y.toFixed(2)}" width="${r.w.toFixed(2)}" height="${r.h.toFixed(2)}"${rx ? ` rx="${rx}" ry="${rx}"` : ""}/>`);
+    parts.push(`</g>`);
+  }
+  if (opts.text && opts.text.trim()) {
+    const fs = Math.round(Math.min(opts.w, opts.h) * opts.textSize);
+    const pad = Math.round(Math.min(opts.w, opts.h) * 0.05);
+    let x, y, anchor, baseline;
+    switch (opts.textPos) {
+      case "tl": x = pad; y = pad + fs * 0.85; anchor = "start"; break;
+      case "tr": x = opts.w - pad; y = pad + fs * 0.85; anchor = "end"; break;
+      case "br": x = opts.w - pad; y = opts.h - pad; anchor = "end"; break;
+      case "c": x = opts.w / 2; y = opts.h / 2 + fs * 0.35; anchor = "middle"; break;
+      case "bl":
+      default: x = pad; y = opts.h - pad; anchor = "start"; break;
+    }
+    const fillMap = { accent: opts.accent, accent2: opts.accent2, fg: opts.bg === "#000000" ? "#ffffff" : "#0e0f12" };
+    const fill = fillMap[opts.textColor] || opts.accent;
+    const lines = opts.text.split(/\n/);
+    parts.push(`<g font-family="Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" font-weight="${opts.textWeight}" font-size="${fs}" fill="${fill}" text-anchor="${anchor}" letter-spacing="-0.01em">`);
+    for (let i = 0; i < lines.length; i++) {
+      const ly = y - (lines.length - 1 - i) * fs * 1.05;
+      parts.push(`<text x="${x}" y="${ly}">${escapeXml(lines[i])}</text>`);
+    }
+    parts.push(`</g>`);
+  }
+  parts.push(`</svg>`);
+  return parts.join("");
+}
+
+function render() {
+  const opts = readOpts();
+  const bars = generate(opts);
+  const svg = buildSvg(opts, bars);
+  $("frame").innerHTML = svg;
+  $("dimsPill").textContent = `${opts.w} × ${opts.h}`;
+  $("seedPill").textContent = `seed ${opts.seed}`;
+  $("barHeightOut").textContent = opts.barH + "px";
+  $("rowGapOut").textContent = opts.gap + "px";
+  $("densityOut").textContent = Math.round(opts.density * 100) + "%";
+  $("skipOut").textContent = Math.round(opts.skip * 100) + "%";
+  $("minBarOut").textContent = Math.round(opts.minBar * 100) + "%";
+  $("maxBarOut").textContent = Math.round(opts.maxBar * 100) + "%";
+  $("textSizeOut").textContent = Math.round(opts.textSize * 100) + "%";
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function currentSvgString() {
+  const opts = readOpts();
+  return buildSvg(opts, generate(opts));
+}
+
+function filenameBase() {
+  const o = readOpts();
+  return `stacc-bg-${o.w}x${o.h}-seed${o.seed}`;
+}
+
+async function downloadPng() {
+  const svg = currentSvgString();
+  const opts = readOpts();
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = new Image();
+    img.decoding = "sync";
+    await new Promise((res, rej) => {
+      img.onload = res;
+      img.onerror = () => rej(new Error("Failed to rasterize SVG"));
+      img.src = url;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = opts.w;
+    canvas.height = opts.h;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = opts.bg;
+    ctx.fillRect(0, 0, opts.w, opts.h);
+    ctx.drawImage(img, 0, 0, opts.w, opts.h);
+    canvas.toBlob((b) => {
+      if (!b) return;
+      downloadBlob(b, filenameBase() + ".png");
+    }, "image/png");
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function downloadSvg() {
+  const blob = new Blob([currentSvgString()], { type: "image/svg+xml;charset=utf-8" });
+  downloadBlob(blob, filenameBase() + ".svg");
+}
+
+async function copySvg() {
+  try {
+    await navigator.clipboard.writeText(currentSvgString());
+    flash($("copySvg"), "Copied!");
+  } catch {
+    flash($("copySvg"), "Copy failed");
+  }
+}
+
+function flash(btn, text) {
+  const original = btn.textContent;
+  btn.textContent = text;
+  setTimeout(() => (btn.textContent = original), 1200);
+}
+
+function bindHexPair(colorEl, hexEl) {
+  const sync = (from, to) => {
+    if (/^#([0-9a-f]{6})$/i.test(from.value)) {
+      to.value = from.value;
+      render();
+    }
+  };
+  colorEl.addEventListener("input", () => { hexEl.value = colorEl.value; render(); });
+  hexEl.addEventListener("change", () => sync(hexEl, colorEl));
+  hexEl.addEventListener("blur", () => sync(hexEl, colorEl));
+}
+
+function buildPalettes() {
+  const wrap = $("palettes");
+  PALETTES.forEach((p) => {
+    const btn = document.createElement("button");
+    btn.title = p.name;
+    btn.innerHTML = `<span class="a" style="background:${p.bg}"></span><span class="b" style="background:${p.a}"></span>`;
+    btn.addEventListener("click", () => {
+      $("bgColor").value = p.bg; $("bgHex").value = p.bg;
+      $("accentColor").value = p.a; $("accentHex").value = p.a;
+      $("accent2Color").value = p.b; $("accent2Hex").value = p.b;
+      render();
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+function bindPreset() {
+  $("preset").addEventListener("change", () => {
+    const v = $("preset").value;
+    if (v === "custom") return;
+    const [w, h] = v.split("x").map(Number);
+    $("width").value = w;
+    $("height").value = h;
+    render();
+  });
+}
+
+function init() {
+  buildPalettes();
+  bindPreset();
+  bindHexPair($("bgColor"), $("bgHex"));
+  bindHexPair($("accentColor"), $("accentHex"));
+  bindHexPair($("accent2Color"), $("accent2Hex"));
+
+  // any change re-renders
+  document.querySelectorAll("input, select, textarea").forEach((el) => {
+    el.addEventListener("input", render);
+    el.addEventListener("change", render);
+  });
+  $("reroll").addEventListener("click", (e) => {
+    e.preventDefault();
+    $("seed").value = Math.floor(Math.random() * 1e9);
+    render();
+  });
+  $("dlSvg").addEventListener("click", downloadSvg);
+  $("dlPng").addEventListener("click", downloadPng);
+  $("copySvg").addEventListener("click", copySvg);
+
+  // keyboard: R to reroll
+  document.addEventListener("keydown", (e) => {
+    if (e.target.matches("input, textarea, select")) return;
+    if (e.key === "r" || e.key === "R") { $("reroll").click(); }
+  });
+
+  render();
+}
+
+init();
+</script>
+</body>
+</html>
