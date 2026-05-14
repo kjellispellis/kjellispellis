@@ -1,0 +1,145 @@
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --text: #1a1f2b;
+  --muted: #5b6472;
+  --border: #e3e6ec;
+  --accent: #0057ff;
+  --accent-hover: #0046cc;
+  --radius: 10px;
+  --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.site-header {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 16px;
+}
+
+.brand-logo {
+  height: 32px;
+  width: auto;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.site-header h1 {
+  margin: 0 0 4px;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.lede {
+  margin: 0;
+  color: var(--muted);
+}
+
+.app {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 800px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+#signature-form {
+  display: grid;
+  gap: 16px;
+}
+
+#signature-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+#signature-form input {
+  font: inherit;
+  color: var(--text);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  outline: none;
+}
+
+#signature-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 87, 255, 0.15);
+}
+
+.preview-panel h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.signature-preview {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  background: #fff;
+  min-height: 160px;
+  overflow-x: auto;
+}
+
+.actions {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+button.primary {
+  font: inherit;
+  font-weight: 500;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.primary:hover {
+  background: var(--accent-hover);
+}
+
+.copy-status {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.site-footer {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--muted);
+}

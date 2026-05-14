@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stacc Email Signature Creator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <img src="https://www.stacc.com/stacc-logo.png" alt="Stacc" class="brand-logo" />
+      <h1>Email Signature Creator</h1>
+      <p class="lede">Fill in your details, copy the signature, paste it into your email client.</p>
+    </header>
+
+    <main class="app">
+      <section class="panel form-panel" aria-label="Your details">
+        <form id="signature-form" autocomplete="off">
+          <label>
+            <span>Full name</span>
+            <input type="text" name="name" placeholder="Kjell Ispellis" required />
+          </label>
+          <label>
+            <span>Title</span>
+            <input type="text" name="title" placeholder="Senior Engineer" />
+          </label>
+          <label>
+            <span>Department / team</span>
+            <input type="text" name="department" placeholder="Platform" />
+          </label>
+          <label>
+            <span>Email</span>
+            <input type="email" name="email" placeholder="kjell@stacc.com" />
+          </label>
+          <label>
+            <span>Phone</span>
+            <input type="tel" name="phone" placeholder="+47 123 45 678" />
+          </label>
+          <label>
+            <span>Office / location</span>
+            <input type="text" name="location" placeholder="Oslo" />
+          </label>
+          <label>
+            <span>LinkedIn URL</span>
+            <input type="url" name="linkedin" placeholder="https://linkedin.com/in/&hellip;" />
+          </label>
+        </form>
+      </section>
+
+      <section class="panel preview-panel" aria-label="Preview">
+        <h2>Preview</h2>
+        <div id="signature-preview" class="signature-preview"></div>
+
+        <div class="actions">
+          <button type="button" id="copy-button" class="primary">Copy signature</button>
+          <span id="copy-status" class="copy-status" aria-live="polite"></span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <small>Internal tool &middot; Stacc</small>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
