@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Seagull Simulator</title>
 <style>
   html, body {
@@ -9,6 +10,8 @@
     background: #1a1a2e; overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: #fff;
+    touch-action: none; -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
   #game {
     display: block; margin: 0 auto; background: #87ceeb;
@@ -44,6 +47,50 @@
   .meter { display: inline-block; width: 120px; height: 10px; background: rgba(0,0,0,0.4);
     border-radius: 5px; margin-left: 8px; overflow: hidden; vertical-align: middle; }
   .meter > div { height: 100%; background: #f4a261; transition: width 0.15s; }
+
+  /* Touch UI */
+  #touch {
+    position: fixed; inset: 0; pointer-events: none;
+    display: none;
+  }
+  body.touch #touch { display: block; }
+  body.touch #controls { display: none; }
+  #stick {
+    position: absolute; left: 24px; bottom: 24px;
+    width: 140px; height: 140px; border-radius: 50%;
+    background: rgba(0,0,0,0.25); border: 2px solid rgba(255,255,255,0.35);
+    pointer-events: auto; touch-action: none;
+  }
+  #stick > .knob {
+    position: absolute; left: 50%; top: 50%;
+    width: 60px; height: 60px; margin: -30px 0 0 -30px;
+    border-radius: 50%; background: rgba(255,255,255,0.6);
+    border: 2px solid rgba(0,0,0,0.3);
+    transition: transform 0.05s;
+  }
+  .tbtn {
+    position: absolute; right: 24px;
+    width: 90px; height: 90px; border-radius: 50%;
+    background: rgba(244,162,97,0.85); color: #1a1a2e;
+    font-weight: 800; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid rgba(0,0,0,0.25);
+    pointer-events: auto; touch-action: none;
+    user-select: none; -webkit-user-select: none;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.25);
+  }
+  .tbtn.active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.25); }
+  #flapBtn { bottom: 100px; background: rgba(42,157,143,0.9); color: #fff; }
+  #squawkBtn { bottom: 24px; background: rgba(231,111,81,0.9); color: #fff; width: 70px; height: 70px; font-size: 13px; right: 34px; }
+  #pauseBtn {
+    position: fixed; top: 12px; right: 12px; pointer-events: auto;
+    background: rgba(0,0,0,0.45); color: #fff; border: none;
+    width: 40px; height: 40px; border-radius: 8px; font-size: 18px;
+    display: none;
+  }
+  body.touch #pauseBtn { display: block; }
+  body.touch #hud { font-size: 13px; }
+  body.touch .meter { width: 90px; }
 </style>
 </head>
 <body>
@@ -64,6 +111,13 @@
   <b>Arrow keys / WASD</b> – steer &nbsp; <b>Space</b> – flap &nbsp; <b>Q</b> – squawk &nbsp; <b>P</b> – pause
 </div>
 
+<div id="touch">
+  <div id="stick"><div class="knob"></div></div>
+  <div id="flapBtn" class="tbtn">FLAP</div>
+  <div id="squawkBtn" class="tbtn">SQUAWK</div>
+</div>
+<button id="pauseBtn">II</button>
+
 <div id="overlay">
   <h1>SEAGULL SIMULATOR</h1>
   <p>You are a seagull at the beach. Steal chips, fries and ice cream from unsuspecting beachgoers.</p>
@@ -82,6 +136,81 @@
     H = canvas.height = window.innerHeight;
   }
   window.addEventListener('resize', resize); resize();
+
+  // Touch detection — show on-screen controls on touch devices
+  const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+  if (isTouch) document.body.classList.add('touch');
+
+  const touchInput = { ax: 0, ay: 0, flap: false };
+
+  // Joystick
+  (() => {
+    const stick = document.getElementById('stick');
+    const knob = stick.querySelector('.knob');
+    const max = 50;
+    let activeId = null, cx = 0, cy = 0;
+    function start(e) {
+      const t = e.changedTouches ? e.changedTouches[0] : e;
+      const r = stick.getBoundingClientRect();
+      cx = r.left + r.width / 2;
+      cy = r.top + r.height / 2;
+      activeId = t.identifier ?? 'mouse';
+      move(e);
+      e.preventDefault();
+    }
+    function move(e) {
+      const touches = e.changedTouches || [e];
+      for (const t of touches) {
+        if ((t.identifier ?? 'mouse') !== activeId) continue;
+        let dx = t.clientX - cx, dy = t.clientY - cy;
+        const d = Math.hypot(dx, dy);
+        if (d > max) { dx = dx / d * max; dy = dy / d * max; }
+        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+        touchInput.ax = dx / max;
+        touchInput.ay = dy / max;
+      }
+      e.preventDefault();
+    }
+    function end(e) {
+      const touches = e.changedTouches || [e];
+      for (const t of touches) {
+        if ((t.identifier ?? 'mouse') !== activeId) continue;
+        activeId = null;
+        knob.style.transform = '';
+        touchInput.ax = 0; touchInput.ay = 0;
+      }
+    }
+    stick.addEventListener('touchstart', start, { passive: false });
+    stick.addEventListener('touchmove', move, { passive: false });
+    stick.addEventListener('touchend', end);
+    stick.addEventListener('touchcancel', end);
+    stick.addEventListener('mousedown', start);
+    window.addEventListener('mousemove', e => { if (activeId === 'mouse') move(e); });
+    window.addEventListener('mouseup', end);
+  })();
+
+  // Flap button (hold)
+  (() => {
+    const btn = document.getElementById('flapBtn');
+    const on = (e) => { touchInput.flap = true; btn.classList.add('active'); e.preventDefault(); };
+    const off = () => { touchInput.flap = false; btn.classList.remove('active'); };
+    btn.addEventListener('touchstart', on, { passive: false });
+    btn.addEventListener('touchend', off);
+    btn.addEventListener('touchcancel', off);
+    btn.addEventListener('mousedown', on);
+    window.addEventListener('mouseup', off);
+  })();
+
+  // Squawk button (tap)
+  document.getElementById('squawkBtn').addEventListener('touchstart', e => {
+    squawk(); e.preventDefault();
+    e.currentTarget.classList.add('active');
+    setTimeout(() => e.target.classList.remove('active'), 150);
+  }, { passive: false });
+  document.getElementById('squawkBtn').addEventListener('click', () => squawk());
+
+  // Pause button
+  document.getElementById('pauseBtn').addEventListener('click', () => { paused = !paused; });
 
   const keys = {};
   window.addEventListener('keydown', e => {
@@ -461,19 +590,24 @@
     spawnTimer -= dt;
     squawkCooldown -= dt;
 
-    // Input
+    // Input — keyboard
     let ax = 0, ay = 0;
     if (keys['arrowleft']  || keys['a']) ax -= 1;
     if (keys['arrowright'] || keys['d']) ax += 1;
     if (keys['arrowup']    || keys['w']) ay -= 1;
     if (keys['arrowdown']  || keys['s']) ay += 1;
+    // Input — touch joystick (dominates when active)
+    if (touchInput.ax !== 0 || touchInput.ay !== 0) {
+      ax = touchInput.ax;
+      ay = touchInput.ay;
+    }
 
     const thrust = 360;
     gull.vx += ax * thrust * dt;
     gull.vy += ay * thrust * dt;
 
     // Flap (boost up + stamina cost)
-    if (keys[' '] && gull.stamina > 0.02) {
+    if ((keys[' '] || touchInput.flap) && gull.stamina > 0.02) {
       gull.vy -= 480 * dt;
       gull.stamina -= 0.25 * dt;
       gull.flapPhase += dt * 22;
@@ -481,6 +615,7 @@
       gull.flapPhase += dt * (8 + Math.abs(gull.vy) * 0.04);
       gull.stamina = Math.min(1, gull.stamina + 0.18 * dt);
     }
+    if (touchInput.flap) gull.flapPhase += dt * 14;
 
     // Gravity
     gull.vy += 220 * dt;
