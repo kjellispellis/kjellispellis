@@ -1,0 +1,219 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-06-09 00:00:00",
+  "containerVersion": {
+    "path": "accounts/000000000/containers/00000000/versions/0",
+    "accountId": "000000000",
+    "containerId": "00000000",
+    "containerVersionId": "0",
+    "name": "stacc.com - web (ad-signal starter)",
+    "container": {
+      "accountId": "000000000",
+      "containerId": "00000000",
+      "name": "stacc.com - web",
+      "publicId": "GTM-P2VKTL82",
+      "usageContext": ["WEB"],
+      "fingerprint": "0",
+      "tagManagerUrl": "https://tagmanager.google.com/"
+    },
+    "builtInVariable": [
+      { "accountId": "000000000", "containerId": "00000000", "type": "EVENT", "name": "Event" },
+      { "accountId": "000000000", "containerId": "00000000", "type": "PAGE_URL", "name": "Page URL" }
+    ],
+    "variable": [
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "1",
+        "name": "DLV - enhanced_conversion_data.email",
+        "type": "v",
+        "parameter": [
+          { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" },
+          { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" },
+          { "type": "TEMPLATE", "key": "name", "value": "enhanced_conversion_data.email" }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "2",
+        "name": "DLV - form_id",
+        "type": "v",
+        "parameter": [
+          { "type": "INTEGER", "key": "dataLayerVersion", "value": "2" },
+          { "type": "BOOLEAN", "key": "setDefaultValue", "value": "false" },
+          { "type": "TEMPLATE", "key": "name", "value": "form_id" }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "3",
+        "name": "UPD - User Provided Data (manual email)",
+        "type": "awued",
+        "notes": "After import: open this variable, confirm Manual mode, and point Email at {{DLV - enhanced_conversion_data.email}}. Then attach it to the Google Ads Conversion tag's 'Include user-provided data' field.",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "mode", "value": "MANUAL" },
+          { "type": "TEMPLATE", "key": "email", "value": "{{DLV - enhanced_conversion_data.email}}" }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "4",
+        "name": "CJS - stacc_attr.gclid",
+        "type": "jsm",
+        "notes": "Reads the gclid the site already stores in sessionStorage['stacc_attr']. Forward only under ad_storage+ad_user_data consent.",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return (JSON.parse(sessionStorage.getItem('stacc_attr')||'{}')).gclid||undefined;}catch(e){return undefined;}}" }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "5",
+        "name": "CJS - stacc_attr.li_fat_id",
+        "type": "jsm",
+        "notes": "Reads the LinkedIn li_fat_id from sessionStorage['stacc_attr'].",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return (JSON.parse(sessionStorage.getItem('stacc_attr')||'{}')).li_fat_id||undefined;}catch(e){return undefined;}}" }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "6",
+        "name": "CJS - stacc_attr.msclkid",
+        "type": "jsm",
+        "notes": "Reads the Microsoft msclkid from sessionStorage['stacc_attr'].",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return (JSON.parse(sessionStorage.getItem('stacc_attr')||'{}')).msclkid||undefined;}catch(e){return undefined;}}" }
+        ],
+        "fingerprint": "0"
+      }
+    ],
+    "trigger": [
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "triggerId": "10",
+        "name": "CE - hubspot_form_success",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              { "type": "TEMPLATE", "key": "arg0", "value": "{{_event}}" },
+              { "type": "TEMPLATE", "key": "arg1", "value": "hubspot_form_success" }
+            ]
+          }
+        ],
+        "fingerprint": "0"
+      }
+    ],
+    "tag": [
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "tagId": "20",
+        "name": "GA4 Event - generate_lead",
+        "type": "gaawe",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "eventName", "value": "generate_lead" },
+          { "type": "BOOLEAN", "key": "sendEcommerceData", "value": "false" },
+          { "type": "TEMPLATE", "key": "measurementIdOverride", "value": "G-XXXXXXXXXX" }
+        ],
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": [
+            { "type": "TEMPLATE", "value": "analytics_storage" }
+          ]
+        },
+        "firingTriggerId": ["10"],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "tagId": "21",
+        "name": "Google Ads - Conversion (lead)",
+        "type": "awct",
+        "notes": "Fill conversionId + conversionLabel. After import, enable 'Include user-provided data from your website' and select {{UPD - User Provided Data (manual email)}} for Enhanced Conversions.",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "conversionId", "value": "XXXXXXXXX" },
+          { "type": "TEMPLATE", "key": "conversionLabel", "value": "XXXXXXXXXXXXXXXX" },
+          { "type": "BOOLEAN", "key": "enableConversionLinker", "value": "true" }
+        ],
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": [
+            { "type": "TEMPLATE", "value": "ad_storage" },
+            { "type": "TEMPLATE", "value": "ad_user_data" }
+          ]
+        },
+        "firingTriggerId": ["10"],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "tagId": "22",
+        "name": "LinkedIn - Insight conversion (cHTML)",
+        "type": "html",
+        "notes": "Replace PARTNER_ID and CONVERSION_ID with your LinkedIn values.",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script type=\"text/javascript\">\nwindow._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];\nwindow._linkedin_data_partner_ids.push(\"PARTNER_ID\");\nif (window.lintrk) { window.lintrk('track', { conversion_id: CONVERSION_ID }); }\n</script>"
+          },
+          { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" }
+        ],
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": [
+            { "type": "TEMPLATE", "value": "ad_storage" },
+            { "type": "TEMPLATE", "value": "ad_user_data" }
+          ]
+        },
+        "firingTriggerId": ["10"],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "tagId": "23",
+        "name": "Microsoft UET - conversion event (cHTML)",
+        "type": "html",
+        "notes": "Requires the UET base tag to be present. Replace event_category/label as needed.",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script type=\"text/javascript\">\nwindow.uetq = window.uetq || [];\nwindow.uetq.push('event', 'submit_lead_form', { 'event_category': 'form', 'event_label': {{DLV - form_id}} });\n</script>"
+          },
+          { "type": "BOOLEAN", "key": "supportDocumentWrite", "value": "false" }
+        ],
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": [
+            { "type": "TEMPLATE", "value": "ad_storage" },
+            { "type": "TEMPLATE", "value": "ad_user_data" }
+          ]
+        },
+        "firingTriggerId": ["10"],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "fingerprint": "0"
+      }
+    ],
+    "fingerprint": "0"
+  }
+}
