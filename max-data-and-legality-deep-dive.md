@@ -2,7 +2,7 @@
 
 Companion to `stacc-ad-signals-gdpr-runbook.md`. This is the exhaustive list — every technique to maximize signal and every legal control — with a B2B-fintech lens (long sales cycles, lead-gen, financial-data sensitivity).
 
-> **Live-site note:** stacc.com returned HTTP 403 to automated inspection, so the *actual* deployed stack (real GTM ID, live CMP/HubSpot tags) is unverified. Confirm against the live site before implementing.
+> **Live-site note (updated):** the deployed stack has now been audited from stacc.com's source. Confirmed: Framer, GTM **`GTM-P2VKTL82`**, click-ID capture into `sessionStorage["stacc_attr"]` (`gclid`/`li_fat_id`/`msclkid`/`utm_*`), CSP allowlisting Google/HubSpot-eu1/LinkedIn/Bing UET/Clarity/CookieYes, EU/EEA residency (Stacc AS, Bergen). **Live forms are HubSpot iframes** — the FramerForm markup in the source is residue/unused. See the runbook's "Live-site audit" + "Remediation" sections for specifics.
 
 ---
 
@@ -99,7 +99,8 @@ Bidding then optimizes toward revenue, not volume.
 ---
 
 ## E. What's still unverified / open questions
-- **Live stack:** real GTM container ID, whether CookieYes + HubSpot are correctly installed, existing pixels (403 blocked inspection).
+- **Dual-CMP:** CSP allowlists both CookieYes and HubSpot `hs-banner.com` — confirm only CookieYes renders a banner (runbook R3).
+- **Prior-consent:** no Consent Mode v2 `default` block precedes `GTM-P2VKTL82` in the live head (runbook R1).
 - **HubSpot ↔ Google Data Manager connector** availability in your portal tier.
 - **Microsoft native connector** in HubSpot (may require Path B webhook).
 - **DPF reliance vs. additional SCCs** — confirm with your DPO/legal.

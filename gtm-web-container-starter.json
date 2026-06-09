@@ -11,7 +11,7 @@
       "accountId": "000000000",
       "containerId": "00000000",
       "name": "stacc.com - web",
-      "publicId": "GTM-XXXXXXX",
+      "publicId": "GTM-P2VKTL82",
       "usageContext": ["WEB"],
       "fingerprint": "0",
       "tagManagerUrl": "https://tagmanager.google.com/"
@@ -57,6 +57,42 @@
         "parameter": [
           { "type": "TEMPLATE", "key": "mode", "value": "MANUAL" },
           { "type": "TEMPLATE", "key": "email", "value": "{{DLV - enhanced_conversion_data.email}}" }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "4",
+        "name": "CJS - stacc_attr.gclid",
+        "type": "jsm",
+        "notes": "Reads the gclid the site already stores in sessionStorage['stacc_attr']. Forward only under ad_storage+ad_user_data consent.",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return (JSON.parse(sessionStorage.getItem('stacc_attr')||'{}')).gclid||undefined;}catch(e){return undefined;}}" }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "5",
+        "name": "CJS - stacc_attr.li_fat_id",
+        "type": "jsm",
+        "notes": "Reads the LinkedIn li_fat_id from sessionStorage['stacc_attr'].",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return (JSON.parse(sessionStorage.getItem('stacc_attr')||'{}')).li_fat_id||undefined;}catch(e){return undefined;}}" }
+        ],
+        "fingerprint": "0"
+      },
+      {
+        "accountId": "000000000",
+        "containerId": "00000000",
+        "variableId": "6",
+        "name": "CJS - stacc_attr.msclkid",
+        "type": "jsm",
+        "notes": "Reads the Microsoft msclkid from sessionStorage['stacc_attr'].",
+        "parameter": [
+          { "type": "TEMPLATE", "key": "javascript", "value": "function(){try{return (JSON.parse(sessionStorage.getItem('stacc_attr')||'{}')).msclkid||undefined;}catch(e){return undefined;}}" }
         ],
         "fingerprint": "0"
       }

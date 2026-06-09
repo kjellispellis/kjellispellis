@@ -2,6 +2,8 @@
 
 **Purpose:** Send verified, consent-compliant conversions from HubSpot form submissions to Google Ads, LinkedIn, and Microsoft (Bing) Ads — bypassing the cross-origin iframe limitation by using the email HubSpot already holds server-side.
 
+> **Confirmed:** stacc.com's live lead forms are **HubSpot iframes** (the FramerForm markup in the page source is residue/unused), and the portal is on **`eu1`**. This spec targets those HubSpot iframe forms.
+
 **Two supported paths.** Path A (native integrations) is least effort. Path B (webhook → server-side GTM) is most flexible and gives you one consistent pipeline. You can run either or both; if both, **dedupe on `conversion_id`**.
 
 ---
@@ -70,7 +72,7 @@ Single pipeline that fans out to all three platforms from your sGTM container (`
 }
 ```
 
-> Capture `gclid` / `li_fat_id` / `msclkid` into hidden HubSpot fields on the landing page (read them from the URL/cookies at form load) so they're available here. These click IDs raise match quality dramatically.
+> **Good news — capture already exists.** stacc.com already stores `gclid` / `li_fat_id` / `msclkid` / `utm_*` in `sessionStorage["stacc_attr"]`. You don't need to build capture; you need to **forward** it into the HubSpot form's hidden fields at form render (see runbook **Phase 9e**), so it lands on the contact and flows into this payload. These click IDs raise match quality dramatically.
 
 ### B2. Server-side GTM handling
 

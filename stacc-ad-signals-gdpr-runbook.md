@@ -8,6 +8,29 @@
 
 ---
 
+## Live-site audit — confirmed facts (verified from stacc.com source, 2026-06)
+
+These supersede earlier inferences. Implementation below is now grounded in what is actually deployed.
+
+| Item | Confirmed state | Implication |
+|---|---|---|
+| Platform | Framer (`www.stacc.com`) | Custom code via Framer head/body injection (paid plan in use). |
+| GTM container | **`GTM-P2VKTL82`** (live) | Use this ID everywhere below — not a placeholder. |
+| Click-ID capture | Custom snippet already captures `gclid`, `li_fat_id`, `msclkid`, `utm_*` into `sessionStorage["stacc_attr"]`; a `framerFormsUTMTags` cookie also set | The hard part is half-done. We just need to forward `stacc_attr` into the HubSpot form + offline/CAPI payloads (see Phase 9e). |
+| Forms | **Live forms are HubSpot iframes.** FramerForm markup (`#my-framerform-container`) is **residue / not in use** | Use the HubSpot `postMessage` path (9c) + server-side sync (9d). Ignore the Framer-native-form path entirely. |
+| CMP | CookieYes present in CSP — **but HubSpot `hs-banner.com` also allowlisted** | Possible dual-CMP. Confirm only CookieYes renders a banner (remediation R3). |
+| CSP allowlist | Google, HubSpot `eu1` (incl. `hsadspixel.net`, `hs-banner.com`), LinkedIn, Bing UET, Clarity, CookieYes | Pixels for all three ad platforms are already wired into CSP; consent-gating is the gap, not connectivity. |
+| Data residency | HubSpot portal `eu1`; JSON-LD = Stacc AS, Bergen NO; ISO 27001 / SOC 2 / DORA / EU AI Act posture; EU/EEA storage | Keep all PII flows in EU regions (sGTM EU, GA4 EU). Fintech sensitivity rules apply (see deep-dive §C-11). |
+| Bing | `msvalidate` meta present | Microsoft tooling already partially set up. |
+
+### Gaps found (drive the remediation section)
+- **No Consent Mode v2 `default` snippet in `<head>` before GTM** → prior-consent risk under ekomloven. (R1)
+- **Framer native analytics (`events.framer.com`) firing unconditionally** → non-consented tracking. (R2)
+- **Possible dual-CMP** (CookieYes + HubSpot banner both reachable per CSP). (R3)
+- **Click IDs captured but not forwarded** into the form / CRM / offline-conversion payloads. (R4 / Phase 9e)
+
+---
+
 ## Target architecture
 
 ```
@@ -107,15 +130,17 @@ Framer → **Site Settings → General → Custom Code → `Start of <head>`** �
 <script id="cookieyes" type="text/javascript"
   src="https://cdn-cookieyes.com/client_data/XXXXXXXX/script.js"></script>
 
-<!-- 3) Google Tag Manager (replace GTM-XXXXXXX) -->
+<!-- 3) Google Tag Manager — Stacc's live container -->
 <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
 j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-XXXXXXX');</script>
+})(window,document,'script','dataLayer','GTM-P2VKTL82');</script>
 ```
 
 > The `consent default … denied` block MUST execute before GTM loads. CookieYes sits between them so it's ready to push the `update`.
+>
+> **Audit finding:** the live head currently loads `GTM-P2VKTL82` **without** a preceding Consent Mode `default` block — this is the prior-consent gap (R1). The fix is exactly the ordering above: prepend block (1), keep CookieYes (2) before GTM (3).
 
 Publish the Framer site after each change.
 
@@ -255,6 +280,55 @@ HubSpot owns the verified email server-side, so this bypasses the iframe entirel
 - **Path B — Webhook → sGTM / CAPI:** HubSpot **workflow → webhook** on form submission → `sgtm.stacc.com` or directly to Google Ads offline conversions / LinkedIn CAPI / Bing CAPI with the hashed email. Fire only when the HubSpot consent property = granted.
 
 Run **client-side (9c)** for fast optimization signal **and** **server-side (9d)** for durable, high-match conversions; **dedupe** on a conversion/order ID.
+
+### 9e. Forward the existing `stacc_attr` click IDs into HubSpot (use what's already there)
+
+The site **already** captures `gclid` / `li_fat_id` / `msclkid` / `utm_*` into `sessionStorage["stacc_attr"]`. Nothing reads them back into the form yet — that's the missing link for offline conversions and CAPI match quality. Wire it up:
+
+1. **Add hidden fields to the HubSpot form(s):** `gclid`, `li_fat_id`, `msclkid`, and (optional) `utm_source/medium/campaign`. Create the matching contact properties in HubSpot if they don't exist (`hs_google_click_id` already exists for `gclid`).
+2. **Populate them at form render.** Because the form is a cross-origin HubSpot iframe you can't write into it from the parent directly; instead use HubSpot's `onFormReady` postMessage to push values via the form API, or set them as **default values from URL/query** in HubSpot. Simplest robust path: on `onFormReady`, read `stacc_attr` and set the fields:
+
+```html
+<script>
+  window.addEventListener('message', function (event) {
+    if (!event.data || event.data.type !== 'hsFormCallback') return;
+    if (event.data.eventName !== 'onFormReady') return;
+    var attr = {};
+    try { attr = JSON.parse(sessionStorage.getItem('stacc_attr') || '{}'); } catch (e) {}
+    var iframe = document.querySelector('iframe.hs-form-iframe');
+    if (!iframe) return;
+    // HubSpot exposes setFieldValue via the embedded form API on the iframe's contentWindow
+    ['gclid','li_fat_id','msclkid','utm_source','utm_medium','utm_campaign']
+      .forEach(function (k) {
+        if (attr[k]) iframe.contentWindow.postMessage(
+          { type: 'hsFormSetValue', name: k, value: attr[k] }, '*');
+      });
+  });
+</script>
+```
+
+> If your HubSpot embed type doesn't expose a setter over postMessage, the reliable alternative is to switch the form to the **JS embed** (`hbspt.forms.create`) and use its `onFormReady(form)` callback to `form.querySelector('input[name="gclid"]').value = attr.gclid`, etc. Same outcome, cleaner API.
+
+3. These click IDs then flow into HubSpot → into the **webhook payload (spec B1)** → into **Enhanced Conversions for Leads / Data Manager** and **LinkedIn/Microsoft CAPI**, lifting match rate well above email-only.
+4. **Consent note:** click IDs are first-party attribution identifiers tied to an ad click. Forward them to ad platforms **only** under the same `ad_storage` + `ad_user_data` consent gate as the conversion itself.
+
+---
+
+## Remediation — fix what the live audit found (do these first)
+
+These four close the compliance gaps on the *current* deployment. They block nothing new; they make the existing rig lawful and complete.
+
+**R1 — Add the Consent Mode v2 `default` block before GTM.**
+The live head loads `GTM-P2VKTL82` with no preceding `consent default … denied`, so marketing/analytics can fire before consent (ekomloven prior-consent breach). Fix = Phase 2 ordering: prepend the `default denied` + `ads_data_redaction` + `url_passthrough` block, with CookieYes between it and GTM. Verify in incognito + GTM Preview that nothing fires pre-Accept.
+
+**R2 — Stop Framer native analytics (`events.framer.com`) firing unconditionally.**
+It currently sends hits regardless of consent. Either disable Framer analytics (Phase 3) — recommended, since GA4 covers the need — or, if kept, gate it on `analytics_storage` and add it to the CookieYes Analytics category so it only fires post-consent. Leaving it unconditional is a standalone ekomloven violation independent of the ad pixels.
+
+**R3 — Resolve the dual-CMP risk.**
+The CSP allowlists both CookieYes and HubSpot's `hs-banner.com`. Two consent banners = inconsistent/contradictory consent state and a HubSpot scanner that fails when another banner is present. Action: in HubSpot **Settings → Privacy & Consent**, turn its banner **OFF** and enable "restrict non-essential cookies until consent" (Phase 9b). Confirm in a clean browser that **only** CookieYes renders. CookieYes stays the single source of consent truth.
+
+**R4 — Forward the captured click IDs.**
+`stacc_attr` (`gclid`/`li_fat_id`/`msclkid`/`utm_*`) is captured but never read back into forms or conversions. Implement Phase 9e so these reach HubSpot → offline conversions / CAPI. Biggest match-quality win available with code you already ship.
 
 ---
 
