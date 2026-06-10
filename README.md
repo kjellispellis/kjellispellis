@@ -5,7 +5,7 @@ unsuspecting beachgoers — and don't get swatted.
 
 A single-file HTML5 canvas game. No build step, no dependencies.
 
-**▶ Play it:** _<add Vercel URL after deploy>_
+**▶ Play it:** <https://seagull-simulator-theta.vercel.app>
 
 ## How to play
 
