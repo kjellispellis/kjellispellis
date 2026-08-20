@@ -24,5 +24,6 @@ Connect this repo to Vercel and deploy. The included `vercel.json` is enough —
 
 ## TODO
 
-- Replace placeholder layout with the real sketch when available
-- Confirm Stacc brand colors and typography (currently using a placeholder accent)
+- Verify the site nav URLs (`stacc.com/products`, `/solutions`, etc.) in `script.js` — they were guessed from the sketch and may need adjusting
+- Confirm the layout matches the sketch's spacing
+- Row icons are inline SVG. They render in the preview and in Gmail's / Apple Mail's / Outlook web's signature editors, but Outlook desktop strips inline SVG — rows fall back to indented text, which still reads correctly. If we want bulletproof rendering everywhere, we'd need to host the icons as PNGs somewhere.
