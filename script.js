@@ -1,4 +1,4 @@
-const LOGO_URL = "https://www.stacc.com/stacc-logo.png";
+const LOGO_URL = "https://www.stacc.com/stacc_logo.png";
 const ACCENT = "#0057ff";
 const TEXT = "#1a1f2b";
 const MUTED = "#5b6472";
