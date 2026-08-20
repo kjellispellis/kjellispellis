@@ -15,6 +15,21 @@ python3 -m http.server 8000
 
 Connect this repo to Vercel and deploy. The included `vercel.json` is enough — no build command, no framework preset needed.
 
+## Password protection
+
+The deployment is gated by HTTP Basic Auth via `middleware.js` (Vercel Edge Middleware). Before the first deploy — or before it will let anyone in — set env vars in the Vercel project (Settings → Environment Variables):
+
+- `BASIC_AUTH_PASSWORD` — the shared password. **Required.** Without it the site returns 500.
+- `BASIC_AUTH_USER` — optional. Defaults to `stacc`.
+
+Generate a decent password locally:
+
+```sh
+openssl rand -base64 24
+```
+
+Set it for all three environments (Production, Preview, Development) so preview URLs are also protected. Redeploy after changing env vars — they aren't picked up mid-deployment.
+
 ## Files
 
 - `index.html` — form, preview, copy button
