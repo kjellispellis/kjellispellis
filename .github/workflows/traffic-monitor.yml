@@ -1,0 +1,73 @@
+name: Traffic monitor
+
+# Checks the evening commute every 10 minutes and pushes an alert when the
+# drive is meaningfully worse than it usually is at that time of day.
+#
+# Cron is UTC. 12:00-16:59 UTC covers the 14:30-17:30 Europe/Oslo window in both
+# CET and CEST; monitor.py skips the runs that fall outside the local window.
+
+on:
+  schedule:
+    - cron: '*/10 12-16 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Check now even outside the time window'
+        type: boolean
+        default: true
+      notify:
+        description: 'Actually send the alert'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: traffic-monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      # Carries the "already alerted you 20 minutes ago" state between runs so
+      # a two-hour jam does not become twelve notifications.
+      - name: Restore alert state
+        uses: actions/cache/restore@v4
+        with:
+          path: traffic/.state.json
+          key: traffic-state-${{ github.run_id }}
+          restore-keys: traffic-state-
+
+      - name: Check the route
+        env:
+          TOMTOM_API_KEY: ${{ secrets.TOMTOM_API_KEY }}
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+          TRAFFIC_PROVIDER: ${{ vars.TRAFFIC_PROVIDER }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NTFY_SERVER: ${{ vars.NTFY_SERVER }}
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          ALERT_EMAIL_FROM: ${{ secrets.ALERT_EMAIL_FROM }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          args=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ inputs.force }}" = "true" ] && args="$args --once"
+            [ "${{ inputs.notify }}" != "true" ] && args="$args --no-notify"
+          fi
+          python3 traffic/monitor.py $args
+
+      - name: Save alert state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: traffic/.state.json
+          key: traffic-state-${{ github.run_id }}

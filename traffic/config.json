@@ -1,0 +1,30 @@
+{
+  "route": {
+    "name": "Strandkaien -> Ellingshaugen 13, Godvik",
+    "waypoints": [
+      { "name": "Strandkaien, Bergen", "lat": 60.394681, "lon": 5.3229555 },
+      { "name": "Puddefjord / Damsgard", "lat": 60.3811024, "lon": 5.2993658 },
+      { "name": "Ellingshaugen 13, 5179 Godvik", "lat": 60.3538565, "lon": 5.1857078 }
+    ]
+  },
+  "provider": "tomtom",
+  "window": {
+    "timezone": "Europe/Oslo",
+    "weekdays": [1, 2, 3, 4, 5],
+    "start": "14:30",
+    "end": "17:30"
+  },
+  "thresholds": {
+    "warn_delay_vs_typical_s": 300,
+    "alert_delay_vs_typical_s": 600,
+    "warn_delay_vs_freeflow_s": 600,
+    "incident_categories": [1, 6, 7, 8, 14],
+    "min_incident_magnitude": 2,
+    "typical_factor": 1.35
+  },
+  "alerting": {
+    "cooldown_minutes": 45,
+    "max_alerts_per_day": 3,
+    "corridor_meters": 2000
+  }
+}
